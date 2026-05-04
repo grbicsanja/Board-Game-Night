@@ -11,7 +11,6 @@ npm install          # install all workspaces
 npm run dev          # client (5173) + server (3001) concurrently
 npm run build        # build shared → client → server
 npm start            # run production build
-npm run tunnel       # build + prod server + public localtunnel; positional arg sets subdomain
 ```
 
 ## Architecture
@@ -72,15 +71,21 @@ All server state mutations must:
 | `PORT` | In production | Set automatically by Railway/Render |
 | `NODE_ENV` | In production | Set to `production` in deploy config |
 | `SERVER_PORT` | No | Dev only — overrides the Vite proxy target in `client/vite.config.ts`. Use when running the server on a non-default port alongside another instance. |
-| `TUNNEL_SUBDOMAIN` | No | Used by `npm run tunnel` when no positional arg is passed. Positional arg wins. |
+| `ADMIN_TOKEN` | No | Enables the server-operator admin panel at `/admin`. When unset, `admin:auth` always rejects and the panel is unreachable. See [Admin](#admin). |
 
 No secrets, no API keys, no database URLs needed.
 
-## Sharing the dev laptop
+## Admin
 
-`npm run tunnel` (script: `scripts/tunnel.mjs`) runs the production build, starts the server, and opens a [localtunnel](https://github.com/localtunnel/localtunnel). The subdomain is the first positional arg (`npm run tunnel -- alice-bgn`) or `TUNNEL_SUBDOMAIN`; with neither, localtunnel assigns a random `*.loca.lt`. Subdomains are a global namespace on loca.lt — collisions silently fall back to random, so always read the `your url is:` line from stdout.
+A server-operator role distinct from per-session host. Auth is gated by the `ADMIN_TOKEN` env var: when set, an operator visiting `/admin` enters the token, which is sent via `admin:auth` and persisted in `sessionStorage` for the tab. Successful auth flips `socket.data.isAdmin` on the connection; every admin handler checks the flag before acting.
 
-In production the server applies `compression()` and serves `client/dist` with `Cache-Control: public, max-age=31536000, immutable` on hashed assets and `no-cache` on `index.html`. This matters specifically for tunneling — loca.lt's free tier is heavily throttled and an uncompressed bundle feels broken.
+Capabilities (all in `server/src/handlers/adminHandlers.ts`):
+
+- `admin:end_session` — force-end any session. Reuses the same `endSession` lifecycle as the host's own `session:end` (`session:ended` to the room → `lobby:session_removed` → delete from store).
+- `admin:remove_game` — delete a game from the library. Refuses if any active session references it; broadcasts `lobby:game_removed` so all lobbies stay in sync.
+- `admin:end_all_sessions` — iterate all sessions and end each.
+
+The admin handler also emits a `lobby:snapshot` to the authenticating socket and joins it to the `lobby` room, so the panel sees live updates without registering as a player. To enable on a deploy, set `ADMIN_TOKEN=<some-secret>` in the platform's env config.
 
 ## Health Check
 
