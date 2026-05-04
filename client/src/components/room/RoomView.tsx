@@ -1,17 +1,38 @@
 import { useMemo } from 'react';
-import { SessionSummary } from '@bgn/shared';
-import { CANVAS_W, CANVAS_H, TABLE_DEFS, SPAWN_X, SPAWN_Y, WALL } from './tableLayout';
+import { LobbyPlayer, SessionSummary } from '@bgn/shared';
+import {
+  CANVAS_W,
+  CANVAS_H,
+  TABLE_DEFS,
+  SPAWN_X,
+  SPAWN_Y,
+  WALL,
+  getSeatsForTable,
+} from './tableLayout';
 import { RoomDecorations } from './RoomDecorations';
 import { TableSlot } from './TableSlot';
 import { MyAvatar } from './MyAvatar';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface RoomViewProps {
   sessions: SessionSummary[];
+  lobbyPlayers: LobbyPlayer[];
+  mySocketId: string | null;
   myNickname: string | null;
+  myAvatarUrl?: string | null;
   onHostHere: () => void;
 }
 
-export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
+const LOBBY_AVATAR_SPACING = 28;
+
+export function RoomView({
+  sessions,
+  lobbyPlayers,
+  mySocketId,
+  myNickname,
+  myAvatarUrl,
+  onHostHere,
+}: RoomViewProps) {
   // Map sessions to table slots by creation order (up to 20)
   const sortedSessions = useMemo(
     () => [...sessions].sort((a, b) => a.createdAt - b.createdAt).slice(0, 20),
@@ -32,6 +53,72 @@ export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
     );
     return idx === -1 ? null : idx;
   }, [sortedSessions, myNickname]);
+
+  const myInLobby = myTableIndex === null && !!myNickname;
+
+  // Single source of truth for every "other player" position. A player keeps
+  // the same React component (keyed by socket id) whether they're in the
+  // lobby or seated at a table, so CSS transitions on left/top animate the
+  // walk between the two.
+  const otherPlayerSlots = useMemo(() => {
+    const slots = new Map<
+      string,
+      { x: number; y: number; nickname: string; avatarUrl?: string; atTable: boolean }
+    >();
+
+    // Seat session players around their table
+    sortedSessions.forEach((session, tableIdx) => {
+      const def = TABLE_DEFS[tableIdx];
+      if (!def) return;
+      const seats = getSeatsForTable(def, session.players.length);
+      session.players.forEach((p, i) => {
+        if (p.id === mySocketId) return; // self handled by MyAvatar
+        const seat = seats[i];
+        if (!seat) return;
+        slots.set(p.id, {
+          x: seat.x + WALL,
+          y: seat.y + WALL,
+          nickname: p.nickname,
+          avatarUrl: p.avatarUrl,
+          atTable: true,
+        });
+      });
+    });
+
+    // Place remaining lobby players at the spawn area. When the local user
+    // is also in the lobby, fan others alternately around their spawn so
+    // MyAvatar stays visually centered.
+    const lobbyOthers = lobbyPlayers.filter(
+      (p) => p.id !== mySocketId && !slots.has(p.id),
+    );
+
+    if (myInLobby) {
+      lobbyOthers.forEach((player, i) => {
+        const slot = Math.floor(i / 2) + 1;
+        const sign = i % 2 === 0 ? 1 : -1;
+        slots.set(player.id, {
+          x: SPAWN_X + sign * slot * LOBBY_AVATAR_SPACING + WALL,
+          y: SPAWN_Y + WALL,
+          nickname: player.nickname,
+          avatarUrl: player.avatarUrl,
+          atTable: false,
+        });
+      });
+    } else {
+      const startX = SPAWN_X - ((lobbyOthers.length - 1) * LOBBY_AVATAR_SPACING) / 2;
+      lobbyOthers.forEach((player, i) => {
+        slots.set(player.id, {
+          x: startX + i * LOBBY_AVATAR_SPACING + WALL,
+          y: SPAWN_Y + WALL,
+          nickname: player.nickname,
+          avatarUrl: player.avatarUrl,
+          atTable: false,
+        });
+      });
+    }
+
+    return slots;
+  }, [sortedSessions, lobbyPlayers, mySocketId, myInLobby]);
 
   const myTargetPos = useMemo(() => {
     if (myTableIndex === null) return { x: SPAWN_X, y: SPAWN_Y };
@@ -71,21 +158,34 @@ export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
           key={def.index}
           def={def}
           session={sessionByTableIndex.get(def.index) ?? null}
-          myNickname={myNickname}
           onHostHere={onHostHere}
+        />
+      ))}
+
+      {Array.from(otherPlayerSlots.entries()).map(([id, slot]) => (
+        <PlayerAvatar
+          key={id}
+          nickname={slot.nickname}
+          avatarUrl={slot.avatarUrl}
+          x={slot.x}
+          y={slot.y}
+          size={slot.atTable ? 16 : 18}
+          showLabel={!slot.atTable}
+          animatePosition
         />
       ))}
 
       {myNickname && (
         <MyAvatar
           nickname={myNickname}
+          avatarUrl={myAvatarUrl}
           targetX={myTargetPos.x}
           targetY={myTargetPos.y}
         />
       )}
 
       {/* Spawn area indicator when no sessions */}
-      {sessions.length === 0 && (
+      {sessions.length === 0 && lobbyPlayers.length <= 1 && (
         <div style={{
           position: 'absolute',
           left: WALL + 40,

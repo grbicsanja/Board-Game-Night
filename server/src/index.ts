@@ -15,6 +15,7 @@ import { registerPlayerHandlers } from './handlers/playerHandlers';
 import { registerSessionHandlers } from './handlers/sessionHandlers';
 import { registerChatHandlers } from './handlers/chatHandlers';
 import { registerGameLibraryHandlers } from './handlers/gameLibraryHandlers';
+import { registerAdminHandlers } from './handlers/adminHandlers';
 import apiRouter from './routes/api';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
@@ -59,6 +60,7 @@ io.on('connection', (socket) => {
   registerSessionHandlers(socket, io);
   registerChatHandlers(socket, io);
   registerGameLibraryHandlers(socket, io);
+  registerAdminHandlers(socket, io);
 });
 
 seedGames();

@@ -1,21 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SessionSummary } from '@bgn/shared';
-import { TableDef, WALL, getSeatsForTable, toCanvas } from './tableLayout';
-import { PlayerAvatar } from './PlayerAvatar';
+import { TableDef, toCanvas } from './tableLayout';
 import { ElapsedTimer } from './ElapsedTimer';
 
 interface TableSlotProps {
   def: TableDef;
   session: SessionSummary | null;
-  myNickname: string | null;
   onHostHere: () => void;
 }
 
+// Player avatars at this table are rendered by RoomView (centrally, with
+// stable keys) so they animate smoothly when walking between lobby and seat.
 export const TableSlot = React.memo(function TableSlot({
   def,
   session,
-  myNickname,
   onHostHere,
 }: TableSlotProps) {
   const navigate = useNavigate();
@@ -32,18 +31,13 @@ export const TableSlot = React.memo(function TableSlot({
   const status = session?.status ?? 'available';
 
   return (
-    <>
-      {session && (
-        <SeatRing def={def} session={session} myNickname={myNickname} />
-      )}
-      <TableButton
-        cx={cx}
-        cy={cy}
-        status={status}
-        session={session}
-        onClick={handleClick}
-      />
-    </>
+    <TableButton
+      cx={cx}
+      cy={cy}
+      status={status}
+      session={session}
+      onClick={handleClick}
+    />
   );
 });
 
@@ -141,38 +135,3 @@ function TableButton({
   );
 }
 
-// ── Avatar ring around the table ─────────────────────────────────────────────
-
-const SeatRing = React.memo(function SeatRing({
-  def, session, myNickname,
-}: {
-  def: TableDef;
-  session: SessionSummary;
-  myNickname: string | null;
-}) {
-  const seats = getSeatsForTable(def, session.playerNicknames.length);
-  const adjustedSeats = seats.map(s => ({
-    x: s.x + WALL,
-    y: s.y + WALL,
-  }));
-
-  return (
-    <>
-      {session.playerNicknames.map((nick, i) => {
-        const seat = adjustedSeats[i];
-        if (!seat) return null;
-        if (nick === myNickname) return null;
-        return (
-          <PlayerAvatar
-            key={nick}
-            nickname={nick}
-            x={seat.x}
-            y={seat.y}
-            size={16}
-            showLabel
-          />
-        );
-      })}
-    </>
-  );
-});

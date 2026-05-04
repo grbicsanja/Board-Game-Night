@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { NicknameModal } from '../components/lobby/NicknameModal';
 import { CreateSessionModal } from '../components/lobby/CreateSessionModal';
+import { SettingsModal } from '../components/layout/SettingsModal';
 import { RoomView } from '../components/room/RoomView';
 import { useAppStore } from '../store/useAppStore';
 import { CANVAS_W, CANVAS_H } from '../components/room/tableLayout';
@@ -11,10 +12,14 @@ const RESUME_BAR_H = 28;
 
 export function LobbyPage() {
   const nickname = useAppStore((s) => s.nickname);
+  const avatarUrl = useAppStore((s) => s.avatarUrl);
   const sessions = useAppStore((s) => s.sessions);
   const currentSession = useAppStore((s) => s.currentSession);
+  const lobbyPlayers = useAppStore((s) => s.lobbyPlayers);
+  const mySocketId = useAppStore((s) => s.socketId);
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -68,19 +73,40 @@ export function LobbyPage() {
           <span style={{ fontSize: 7, color: '#f9c74f', letterSpacing: 1 }}>
             🎲 {nickname ?? '…'}
           </span>
-          <Link
-            to="/add-game"
-            style={{
-              fontSize: 6,
-              color: '#90cdf4',
-              textDecoration: 'none',
-              border: '1px solid #4a5568',
-              padding: '4px 8px',
-              background: '#1a202c',
-            }}
-          >
-            + GAME
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Link
+              to="/add-game"
+              style={{
+                fontSize: 6,
+                color: '#90cdf4',
+                textDecoration: 'none',
+                border: '1px solid #4a5568',
+                padding: '4px 8px',
+                background: '#1a202c',
+              }}
+            >
+              + GAME
+            </Link>
+            {nickname && (
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                aria-label="Open settings"
+                style={{
+                  fontSize: 6,
+                  color: '#f9c74f',
+                  border: '1px solid #4a5568',
+                  padding: '4px 8px',
+                  background: '#1a202c',
+                  cursor: 'pointer',
+                  fontFamily: '"Press Start 2P", monospace',
+                  lineHeight: 1,
+                }}
+              >
+                ⚙ SETTINGS
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Resume banner */}
@@ -111,7 +137,10 @@ export function LobbyPage() {
         {/* Room */}
         <RoomView
           sessions={sessions}
+          lobbyPlayers={lobbyPlayers}
+          mySocketId={mySocketId}
           myNickname={nickname}
+          myAvatarUrl={avatarUrl}
           onHostHere={() => {
             if (nickname) setShowCreateModal(true);
           }}
@@ -121,6 +150,8 @@ export function LobbyPage() {
       {showCreateModal && (
         <CreateSessionModal onClose={() => setShowCreateModal(false)} />
       )}
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

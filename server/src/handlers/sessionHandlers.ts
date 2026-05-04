@@ -13,6 +13,7 @@ import {
   getGame,
   getAllSessions,
   getAllGames,
+  getLobbyPlayers,
   getSession,
   getSessionSummary,
   setConnectionSession,
@@ -38,7 +39,11 @@ export function registerSessionHandlers(socket: TypedSocket, io: TypedServer): v
   socket.on('player:register', () => {
     const sessions = getAllSessions().map(getSessionSummary);
     const games = getAllGames();
-    socket.emit('lobby:snapshot', { sessions, games });
+    socket.emit('lobby:snapshot', {
+      sessions,
+      games,
+      lobbyPlayers: getLobbyPlayers(),
+    });
   });
 
   socket.on('session:create', ({ gameId }, ack) => {
@@ -59,9 +64,17 @@ export function registerSessionHandlers(socket: TypedSocket, io: TypedServer): v
       gameId: game.id,
       gameName: game.name,
       hostNickname: conn.nickname,
+      hostAvatarUrl: conn.avatarUrl,
       hostSocketId: socket.id,
       status: 'open',
-      players: [{ id: socket.id, nickname: conn.nickname, joinedAt: Date.now() }],
+      players: [
+        {
+          id: socket.id,
+          nickname: conn.nickname,
+          avatarUrl: conn.avatarUrl,
+          joinedAt: Date.now(),
+        },
+      ],
       waitlist: [],
       chat: [],
       reactions: {},
@@ -76,6 +89,7 @@ export function registerSessionHandlers(socket: TypedSocket, io: TypedServer): v
     setConnectionSession(socket.id, session.id);
 
     io.to('lobby').emit('lobby:session_added', getSessionSummary(session));
+    io.to('lobby').emit('lobby:players_updated', { players: getLobbyPlayers() });
     ack({ sessionId: session.id });
   });
 
@@ -136,7 +150,7 @@ export function registerSessionHandlers(socket: TypedSocket, io: TypedServer): v
   });
 }
 
-function endSession(io: TypedServer, session: Session): void {
+export function endSession(io: TypedServer, session: Session): void {
   const sessionId = session.id;
   io.to(`session:${sessionId}`).emit('session:ended', { sessionId });
   io.to('lobby').emit('lobby:session_removed', { sessionId });
