@@ -22,40 +22,6 @@ export const RoomDecorations = React.memo(function RoomDecorations() {
         BOARD GAME NIGHT
       </div>
 
-      {/* Lounge label */}
-      <div style={{
-        position: 'absolute',
-        left: CANVAS_W / 2,
-        top: WALL + ROOM_H - 22,
-        transform: 'translateX(-50%)',
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: 5,
-        color: '#f9c74f',
-        textShadow: '1px 1px 0 #000',
-        letterSpacing: 1,
-        whiteSpace: 'nowrap',
-        pointerEvents: 'none',
-        zIndex: 20,
-      }}>
-        ★ LOUNGE ★
-      </div>
-
-      {/* Entrance label */}
-      <div style={{
-        position: 'absolute',
-        bottom: 4,
-        left: WALL + ROOM_W / 2,
-        transform: 'translateX(-50%)',
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: 5,
-        color: '#f9c74f',
-        textShadow: '1px 1px 0 #000',
-        letterSpacing: 1,
-        pointerEvents: 'none',
-        zIndex: 20,
-      }}>
-        ENTER
-      </div>
     </>
   );
 });
