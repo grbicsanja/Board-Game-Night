@@ -1,41 +1,82 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
 import { NicknameModal } from '../components/lobby/NicknameModal';
-import { SessionList } from '../components/lobby/SessionList';
 import { CreateSessionModal } from '../components/lobby/CreateSessionModal';
+import { RoomView } from '../components/room/RoomView';
 import { useAppStore } from '../store/useAppStore';
 
 export function LobbyPage() {
   const nickname = useAppStore((s) => s.nickname);
+  const sessions = useAppStore((s) => s.sessions);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   return (
-    <Layout>
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: '#1a1a2e',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        fontFamily: '"Press Start 2P", monospace',
+      }}
+    >
       {!nickname && <NicknameModal />}
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800">Active Sessions</h2>
-        <div className="flex gap-2">
+      {/* Top bar */}
+      <div style={{
+        width: '100%',
+        maxWidth: 400,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 12px',
+        background: '#0d0d1a',
+        borderBottom: '2px solid #3d2608',
+      }}>
+        <span style={{ fontSize: 7, color: '#f9c74f', letterSpacing: 1 }}>
+          🎲 {nickname ?? '…'}
+        </span>
+        <div style={{ display: 'flex', gap: 8 }}>
           <Link
             to="/add-game"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            style={{
+              fontSize: 5,
+              color: '#90cdf4',
+              textDecoration: 'none',
+              border: '1px solid #4a5568',
+              padding: '4px 6px',
+              background: '#1a202c',
+            }}
           >
-            + Add Game
+            + GAME
           </Link>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            disabled={!nickname}
-            className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-          >
-            Host a Game
-          </button>
         </div>
       </div>
 
-      <SessionList />
+      {/* Scrollable room viewport */}
+      <div style={{
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        flex: 1,
+        width: '100%',
+        maxWidth: 400,
+        display: 'flex',
+        justifyContent: 'center',
+        WebkitOverflowScrolling: 'touch',
+      }}>
+        <RoomView
+          sessions={sessions}
+          myNickname={nickname}
+          onHostHere={() => {
+            if (nickname) setShowCreateModal(true);
+          }}
+        />
+      </div>
 
-      {showCreateModal && <CreateSessionModal onClose={() => setShowCreateModal(false)} />}
-    </Layout>
+      {showCreateModal && (
+        <CreateSessionModal onClose={() => setShowCreateModal(false)} />
+      )}
+    </div>
   );
 }
