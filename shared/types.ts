@@ -132,6 +132,10 @@ export interface ClientToServerEvents {
   'admin:end_all_sessions': (
     ack: (response: { ok: true; ended: number } | { ok: false; error: string }) => void
   ) => void;
+  'admin:kick_lobby_player': (
+    data: { socketId: string },
+    ack: (response: { ok: true } | { ok: false; error: string }) => void
+  ) => void;
 }
 
 export interface InterServerEvents {}

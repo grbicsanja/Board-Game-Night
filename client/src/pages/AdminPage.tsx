@@ -9,12 +9,14 @@ const TOKEN_STORAGE_KEY = 'bgn-admin-token';
 export function AdminPage() {
   const sessions = useAppStore((s) => s.sessions);
   const games = useAppStore((s) => s.games);
+  const lobbyPlayers = useAppStore((s) => s.lobbyPlayers);
   const [authed, setAuthed] = useState(false);
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [endingId, setEndingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [kickingId, setKickingId] = useState<string | null>(null);
   const [confirmEndAll, setConfirmEndAll] = useState(false);
 
   // Auto-auth on mount if a token is stored, and on every reconnect.
@@ -76,6 +78,14 @@ export function AdminPage() {
   const handleEndAll = () => {
     socket.emit('admin:end_all_sessions', (res) => {
       setConfirmEndAll(false);
+      if (!res.ok) alert(res.error);
+    });
+  };
+
+  const handleKickLobbyPlayer = (socketId: string) => {
+    setKickingId(socketId);
+    socket.emit('admin:kick_lobby_player', { socketId }, (res) => {
+      setKickingId(null);
       if (!res.ok) alert(res.error);
     });
   };
@@ -209,6 +219,37 @@ export function AdminPage() {
                   className="ml-3 rounded-lg border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-50"
                 >
                   {endingId === s.id ? 'Ending…' : 'End'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Lobby players ({lobbyPlayers.length})
+        </h3>
+        {lobbyPlayers.length === 0 ? (
+          <p className="text-sm text-gray-500">No players in the lobby.</p>
+        ) : (
+          <ul className="space-y-2">
+            {lobbyPlayers.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm"
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-medium text-gray-800">{p.nickname}</span>
+                  <span className="ml-2 font-mono text-xs text-gray-400">{p.id}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleKickLobbyPlayer(p.id)}
+                  disabled={kickingId === p.id}
+                  className="ml-3 rounded-lg border border-red-300 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-50"
+                >
+                  {kickingId === p.id ? 'Kicking…' : 'Kick'}
                 </button>
               </li>
             ))}
