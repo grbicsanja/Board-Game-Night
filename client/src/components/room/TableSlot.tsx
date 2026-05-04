@@ -115,7 +115,7 @@ function TableButton({
       {!session && (
         <>
           <span style={{ ...label, fontSize: 14, color: '#90cdf4', lineHeight: 1 }}>+</span>
-          <span style={{ ...label, fontSize: 5, color: '#bee3f8' }}>HOST</span>
+          <span style={{ ...label, fontSize: 5, color: '#bee3f8' }}>GAME</span>
         </>
       )}
 
