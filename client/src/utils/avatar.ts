@@ -1,3 +1,5 @@
+import { sha256 } from 'js-sha256';
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_RE = /^https?:\/\//i;
 
@@ -16,13 +18,10 @@ export async function resolveAvatarInput(raw: string): Promise<string> {
   const kind = classifyAvatarInput(trimmed);
   if (kind === 'empty' || kind === 'invalid') return '';
   if (kind === 'url') return trimmed;
-  const hash = await sha256Hex(trimmed.toLowerCase());
+  // Gravatar's modern API hashes the lowercased email with SHA-256. We use a
+  // pure-JS implementation rather than crypto.subtle because the latter is
+  // only exposed in secure contexts (HTTPS / localhost), not on plain-HTTP
+  // LAN IPs.
+  const hash = sha256(trimmed.toLowerCase());
   return `https://gravatar.com/avatar/${hash}?s=200&d=identicon`;
-}
-
-async function sha256Hex(input: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
 }

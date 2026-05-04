@@ -63,6 +63,8 @@ export interface SessionSummary {
   createdAt: number;
   playerNicknames: string[];
   waitlistNicknames: string[];
+  players: LobbyPlayer[];
+  waitlistPlayers: LobbyPlayer[];
   startedAt: number | null;
   maxPlayers: number;
 }

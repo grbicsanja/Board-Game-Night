@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import { LobbyPlayer, SessionSummary } from '@bgn/shared';
-import { CANVAS_W, CANVAS_H, TABLE_DEFS, SPAWN_X, SPAWN_Y, WALL } from './tableLayout';
+import {
+  CANVAS_W,
+  CANVAS_H,
+  TABLE_DEFS,
+  SPAWN_X,
+  SPAWN_Y,
+  WALL,
+  getSeatsForTable,
+} from './tableLayout';
 import { RoomDecorations } from './RoomDecorations';
 import { TableSlot } from './TableSlot';
 import { MyAvatar } from './MyAvatar';
@@ -48,27 +56,69 @@ export function RoomView({
 
   const myInLobby = myTableIndex === null && !!myNickname;
 
-  // Lay out other lobby players in a row at the bottom. When the current
-  // user is also in the lobby, MyAvatar sits at SPAWN_X — fan others out
-  // alternately to its right and left so it stays visually centered.
-  const lobbyAvatarPositions = useMemo(() => {
-    const others = lobbyPlayers.filter((p) => p.id !== mySocketId);
-    if (others.length === 0) return [] as { player: LobbyPlayer; x: number }[];
+  // Single source of truth for every "other player" position. A player keeps
+  // the same React component (keyed by socket id) whether they're in the
+  // lobby or seated at a table, so CSS transitions on left/top animate the
+  // walk between the two.
+  const otherPlayerSlots = useMemo(() => {
+    const slots = new Map<
+      string,
+      { x: number; y: number; nickname: string; avatarUrl?: string; atTable: boolean }
+    >();
+
+    // Seat session players around their table
+    sortedSessions.forEach((session, tableIdx) => {
+      const def = TABLE_DEFS[tableIdx];
+      if (!def) return;
+      const seats = getSeatsForTable(def, session.players.length);
+      session.players.forEach((p, i) => {
+        if (p.id === mySocketId) return; // self handled by MyAvatar
+        const seat = seats[i];
+        if (!seat) return;
+        slots.set(p.id, {
+          x: seat.x + WALL,
+          y: seat.y + WALL,
+          nickname: p.nickname,
+          avatarUrl: p.avatarUrl,
+          atTable: true,
+        });
+      });
+    });
+
+    // Place remaining lobby players at the spawn area. When the local user
+    // is also in the lobby, fan others alternately around their spawn so
+    // MyAvatar stays visually centered.
+    const lobbyOthers = lobbyPlayers.filter(
+      (p) => p.id !== mySocketId && !slots.has(p.id),
+    );
 
     if (myInLobby) {
-      return others.map((player, i) => {
+      lobbyOthers.forEach((player, i) => {
         const slot = Math.floor(i / 2) + 1;
         const sign = i % 2 === 0 ? 1 : -1;
-        return { player, x: SPAWN_X + sign * slot * LOBBY_AVATAR_SPACING };
+        slots.set(player.id, {
+          x: SPAWN_X + sign * slot * LOBBY_AVATAR_SPACING + WALL,
+          y: SPAWN_Y + WALL,
+          nickname: player.nickname,
+          avatarUrl: player.avatarUrl,
+          atTable: false,
+        });
+      });
+    } else {
+      const startX = SPAWN_X - ((lobbyOthers.length - 1) * LOBBY_AVATAR_SPACING) / 2;
+      lobbyOthers.forEach((player, i) => {
+        slots.set(player.id, {
+          x: startX + i * LOBBY_AVATAR_SPACING + WALL,
+          y: SPAWN_Y + WALL,
+          nickname: player.nickname,
+          avatarUrl: player.avatarUrl,
+          atTable: false,
+        });
       });
     }
 
-    const startX = SPAWN_X - ((others.length - 1) * LOBBY_AVATAR_SPACING) / 2;
-    return others.map((player, i) => ({
-      player,
-      x: startX + i * LOBBY_AVATAR_SPACING,
-    }));
-  }, [lobbyPlayers, mySocketId, myInLobby]);
+    return slots;
+  }, [sortedSessions, lobbyPlayers, mySocketId, myInLobby]);
 
   const myTargetPos = useMemo(() => {
     if (myTableIndex === null) return { x: SPAWN_X, y: SPAWN_Y };
@@ -108,19 +158,20 @@ export function RoomView({
           key={def.index}
           def={def}
           session={sessionByTableIndex.get(def.index) ?? null}
-          myNickname={myNickname}
           onHostHere={onHostHere}
         />
       ))}
 
-      {lobbyAvatarPositions.map(({ player, x }) => (
+      {Array.from(otherPlayerSlots.entries()).map(([id, slot]) => (
         <PlayerAvatar
-          key={player.id}
-          nickname={player.nickname}
-          avatarUrl={player.avatarUrl}
-          x={x + WALL}
-          y={SPAWN_Y + WALL}
-          showLabel
+          key={id}
+          nickname={slot.nickname}
+          avatarUrl={slot.avatarUrl}
+          x={slot.x}
+          y={slot.y}
+          size={slot.atTable ? 16 : 18}
+          showLabel={!slot.atTable}
+          animatePosition
         />
       ))}
 

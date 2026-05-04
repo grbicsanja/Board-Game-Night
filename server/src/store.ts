@@ -136,6 +136,16 @@ export function getSessionSummary(session: Session): SessionSummary {
     createdAt: session.createdAt,
     playerNicknames: session.players.map((p) => p.nickname),
     waitlistNicknames: session.waitlist.map((p) => p.nickname),
+    players: session.players.map((p) => ({
+      id: p.id,
+      nickname: p.nickname,
+      avatarUrl: p.avatarUrl,
+    })),
+    waitlistPlayers: session.waitlist.map((p) => ({
+      id: p.id,
+      nickname: p.nickname,
+      avatarUrl: p.avatarUrl,
+    })),
     startedAt: session.startedAt,
     maxPlayers: game?.maxPlayers ?? 8,
   };

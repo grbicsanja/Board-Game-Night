@@ -9,6 +9,7 @@ interface PlayerAvatarProps {
   size?: number;
   showLabel?: boolean;
   isMoving?: boolean;
+  animatePosition?: boolean;
 }
 
 export const PlayerAvatar = React.memo(function PlayerAvatar({
@@ -19,11 +20,26 @@ export const PlayerAvatar = React.memo(function PlayerAvatar({
   size = 18,
   showLabel = false,
   isMoving = false,
+  animatePosition = false,
 }: PlayerAvatarProps) {
   const color = getAvatarColor(nickname);
   const initial = nickname.slice(0, 1).toUpperCase();
   const [imgFailed, setImgFailed] = React.useState(false);
   const showImage = !!avatarUrl && !imgFailed;
+
+  // Track whether we've moved since mount; first paint should land at the
+  // target without a transition, but subsequent x/y changes should walk.
+  const prevPos = React.useRef({ x, y });
+  const [walking, setWalking] = React.useState(false);
+  React.useEffect(() => {
+    if (!animatePosition) return;
+    const moved = prevPos.current.x !== x || prevPos.current.y !== y;
+    prevPos.current = { x, y };
+    if (!moved) return;
+    setWalking(true);
+    const t = setTimeout(() => setWalking(false), 750);
+    return () => clearTimeout(t);
+  }, [x, y, animatePosition]);
 
   React.useEffect(() => {
     setImgFailed(false);
@@ -39,8 +55,9 @@ export const PlayerAvatar = React.memo(function PlayerAvatar({
         height: size,
         zIndex: 20,
         pointerEvents: 'none',
+        transition: animatePosition ? 'left 0.7s steps(8, end), top 0.7s steps(8, end)' : undefined,
       }}
-      className={isMoving ? 'pixel-bob' : undefined}
+      className={isMoving || walking ? 'pixel-bob' : undefined}
     >
       <div
         style={{
