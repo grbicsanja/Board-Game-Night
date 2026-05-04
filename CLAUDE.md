@@ -11,6 +11,7 @@ npm install          # install all workspaces
 npm run dev          # client (5173) + server (3001) concurrently
 npm run build        # build shared → client → server
 npm start            # run production build
+npm run tunnel       # build + prod server + public localtunnel; positional arg sets subdomain
 ```
 
 ## Architecture
@@ -70,8 +71,16 @@ All server state mutations must:
 |---|---|---|
 | `PORT` | In production | Set automatically by Railway/Render |
 | `NODE_ENV` | In production | Set to `production` in deploy config |
+| `SERVER_PORT` | No | Dev only — overrides the Vite proxy target in `client/vite.config.ts`. Use when running the server on a non-default port alongside another instance. |
+| `TUNNEL_SUBDOMAIN` | No | Used by `npm run tunnel` when no positional arg is passed. Positional arg wins. |
 
 No secrets, no API keys, no database URLs needed.
+
+## Sharing the dev laptop
+
+`npm run tunnel` (script: `scripts/tunnel.mjs`) runs the production build, starts the server, and opens a [localtunnel](https://github.com/localtunnel/localtunnel). The subdomain is the first positional arg (`npm run tunnel -- alice-bgn`) or `TUNNEL_SUBDOMAIN`; with neither, localtunnel assigns a random `*.loca.lt`. Subdomains are a global namespace on loca.lt — collisions silently fall back to random, so always read the `your url is:` line from stdout.
+
+In production the server applies `compression()` and serves `client/dist` with `Cache-Control: public, max-age=31536000, immutable` on hashed assets and `no-cache` on `index.html`. This matters specifically for tunneling — loca.lt's free tier is heavily throttled and an uncompressed bundle feels broken.
 
 ## Health Check
 
