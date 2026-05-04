@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { NicknameModal } from '../components/lobby/NicknameModal';
 import { CreateSessionModal } from '../components/lobby/CreateSessionModal';
 import { RoomView } from '../components/room/RoomView';
@@ -7,23 +7,27 @@ import { useAppStore } from '../store/useAppStore';
 import { CANVAS_W, CANVAS_H } from '../components/room/tableLayout';
 
 const TOP_BAR_H = 38;
+const RESUME_BAR_H = 28;
 
 export function LobbyPage() {
   const nickname = useAppStore((s) => s.nickname);
   const sessions = useAppStore((s) => s.sessions);
+  const currentSession = useAppStore((s) => s.currentSession);
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     const update = () => {
       const sx = window.innerWidth / CANVAS_W;
-      const sy = window.innerHeight / (CANVAS_H + TOP_BAR_H);
+      const extraH = currentSession ? RESUME_BAR_H : 0;
+      const sy = window.innerHeight / (CANVAS_H + TOP_BAR_H + extraH);
       setScale(Math.min(sx, sy));
     };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [currentSession]);
 
   return (
     <div
@@ -78,6 +82,31 @@ export function LobbyPage() {
             + GAME
           </Link>
         </div>
+
+        {/* Resume banner */}
+        {currentSession && (
+          <button
+            onClick={() => navigate(`/session/${currentSession.id}`)}
+            style={{
+              height: RESUME_BAR_H,
+              width: '100%',
+              background: 'rgba(45,89,242,0.92)',
+              border: 'none',
+              borderBottom: '2px solid #2D59F2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 12px',
+              cursor: 'pointer',
+              fontFamily: '"Press Start 2P", monospace',
+            }}
+          >
+            <span style={{ fontSize: 6, color: '#fff' }}>
+              🎮 {currentSession.gameName}
+            </span>
+            <span style={{ fontSize: 5, color: '#bee3f8' }}>RESUME →</span>
+          </button>
+        )}
 
         {/* Room */}
         <RoomView

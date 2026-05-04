@@ -30,6 +30,7 @@ export function useSocket() {
     socket.on('lobby:game_added', (game) => store.addGame(game));
 
     socket.on('session:snapshot', (session) => store.setCurrentSession(session));
+    socket.on('session:ended', () => store.setCurrentSession(null));
 
     socket.on('session:player_joined', ({ player }) => {
       store.addPlayerToSession(player);
@@ -66,6 +67,7 @@ export function useSocket() {
       socket.off('lobby:session_removed');
       socket.off('lobby:game_added');
       socket.off('session:snapshot');
+    socket.off('session:ended');
       socket.off('session:player_joined');
       socket.off('session:player_waitlisted');
       socket.off('session:player_left');

@@ -22,7 +22,7 @@ export function useSessionSync(sessionId: string) {
     return () => {
       socket.off('session:ended', handleEnded);
       socket.emit('session:leave', { sessionId });
-      setCurrentSession(null);
+      // Keep currentSession in the store so the lobby can show a resume banner.
     };
   }, [sessionId, navigate, setCurrentSession]);
 }

@@ -95,12 +95,8 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
 
     leaveSession(socket, io, sessionId, conn.nickname);
 
-    // For the host, "leave" means "minimize back to the lobby" — keep the
-    // connection bound to the session so a real disconnect still ends it,
-    // and so the host can resume from the lobby.
-    if (!isHost) {
-      setConnectionSession(socket.id, null);
-    }
+    // "Leave" for all players means "minimize to lobby" — keep the session
+    // binding so a real disconnect still cleans up and so they can resume.
     socket.join('lobby');
     // Refresh the lobby view: while in the session this socket missed any
     // lobby:* broadcasts (including session_added for its own session).
@@ -133,9 +129,9 @@ function leaveSession(
 
   const wasHost = session.hostSocketId === socket.id;
 
-  // Host navigating back to the lobby keeps the session alive so they can
-  // resume. Only an actual disconnect tears it down.
-  if (wasHost && !isDisconnect) {
+  // Any non-disconnect leave is a "minimize to lobby" — keep the player in
+  // the session so they can resume. Only a real disconnect removes them.
+  if (!isDisconnect) {
     return;
   }
 
