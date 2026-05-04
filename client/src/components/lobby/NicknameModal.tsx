@@ -29,7 +29,7 @@ export function NicknameModal() {
       </h2>
       <p className="mb-4 text-sm text-gray-500">Pick a nickname to join the party.</p>
       <form onSubmit={handleSubmit} noValidate>
-        <label htmlFor="nickname-input" className="mb-1 block text-sm font-medium text-gray-700">
+        <label htmlFor="nickname-input" className="mb-1 block text-xs font-bold text-gray-700">
           Your nickname
         </label>
         <input

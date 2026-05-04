@@ -56,6 +56,8 @@ export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
         position: 'relative',
         width: CANVAS_W,
         height: CANVAS_H,
+        backgroundImage: "url('/room-bg.png')",
+        backgroundSize: '100% 100%',
         imageRendering: 'pixelated',
         flexShrink: 0,
       }}

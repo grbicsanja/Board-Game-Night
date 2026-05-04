@@ -1,21 +1,20 @@
-// Room interior: 336px × 864px
-// Total canvas with 16px walls: 368px × 896px
-export const WALL = 16;
-export const ROOM_W = 336;
-export const ROOM_H = 864;
-export const CANVAS_W = ROOM_W + WALL * 2; // 368
-export const CANVAS_H = ROOM_H + WALL * 2; // 896
+// Room canvas: 680px × 380px (landscape, matches room-bg.png aspect ratio)
+export const WALL = 24;
+export const ROOM_W = 632;
+export const ROOM_H = 332;
+export const CANVAS_W = ROOM_W + WALL * 2; // 680
+export const CANVAS_H = ROOM_H + WALL * 2; // 380
 
-// Five evenly-spaced column centers
-export const COL_X = [33, 101, 168, 235, 303] as const;
+// Five column centers (interior coordinates)
+export const COL_X = [63, 173, 316, 459, 569] as const;
 
 // Row centers (interior coordinates)
-export const RECT_ROW_Y  = [90, 210] as const;   // 2 rows of rect tables
-export const ROUND_ROW_Y = [370, 480] as const;  // 2 rows of round tables
+export const RECT_ROW_Y  = [55, 120] as const;   // 2 rows of rect tables
+export const ROUND_ROW_Y = [200, 268] as const;  // 2 rows of round tables
 
-// Player spawn (entrance area at bottom of room)
-export const SPAWN_X = 168;
-export const SPAWN_Y = 760;
+// Player spawn (entrance at bottom center)
+export const SPAWN_X = 316;
+export const SPAWN_Y = 318;
 
 export type TableType = 'rect' | 'round';
 
@@ -53,7 +52,7 @@ export const ROUND_R = 20; // radius
 
 // Seat positions around a rect table (up to 6 seats: 3 top, 3 bottom)
 export function getRectSeats(cx: number, cy: number): { x: number; y: number }[] {
-  const gap = 26; // distance from table center to seat center
+  const gap = 26;
   return [
     { x: cx - 14, y: cy - RECT_H / 2 - gap },
     { x: cx,      y: cy - RECT_H / 2 - gap },

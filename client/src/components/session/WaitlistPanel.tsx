@@ -14,17 +14,17 @@ export function WaitlistPanel({ session, mySocketId, isHost }: WaitlistPanelProp
 
   return (
     <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-      <h3 className="mb-1 text-sm font-semibold text-amber-800">
+      <h3 className="mb-1 text-[9px] font-bold text-amber-800">
         Waitlist ({session.waitlist.length})
       </h3>
       {onWaitlist && (
-        <p className="mb-2 text-xs text-amber-700">
+        <p className="mb-2 text-[9px] text-amber-700">
           You're on the waitlist. You'll join when the game is paused.
         </p>
       )}
       <ul className="space-y-1">
         {session.waitlist.map((player) => (
-          <li key={player.id} className="text-sm text-amber-900">
+          <li key={player.id} className="text-[9px] font-bold text-amber-900">
             {player.nickname}
           </li>
         ))}
