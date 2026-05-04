@@ -33,7 +33,7 @@ export function ChatPanel({ session, myNickname }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
-      <h3 className="border-b border-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700">
+      <h3 className="border-b border-gray-100 px-4 py-2.5 text-[9px] font-bold text-gray-700">
         Chat
       </h3>
 
@@ -43,7 +43,7 @@ export function ChatPanel({ session, myNickname }: ChatPanelProps) {
         aria-label="Chat messages"
       >
         {session.chat.length === 0 && (
-          <p className="text-center text-xs text-gray-400">No messages yet. Say hi!</p>
+          <p className="text-center text-[9px] text-gray-400">No messages yet. Say hi!</p>
         )}
         {session.chat.map((msg) => {
           const isMine = msg.authorNickname === myNickname;
@@ -53,12 +53,12 @@ export function ChatPanel({ session, myNickname }: ChatPanelProps) {
               className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
             >
               {!isMine && (
-                <span className="mb-0.5 text-xs font-medium text-gray-500">
+                <span className="mb-0.5 text-[8px] font-bold text-gray-500">
                   {msg.authorNickname}
                 </span>
               )}
               <div
-                className={`max-w-[80%] rounded-2xl px-3 py-1.5 text-sm ${
+                className={`max-w-[80%] rounded-xl px-3 py-1.5 text-[9px] leading-relaxed ${
                   isMine
                     ? 'rounded-br-sm bg-indigo-600 text-white'
                     : 'rounded-bl-sm bg-gray-100 text-gray-800'

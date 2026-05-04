@@ -1,41 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
 import { NicknameModal } from '../components/lobby/NicknameModal';
-import { SessionList } from '../components/lobby/SessionList';
 import { CreateSessionModal } from '../components/lobby/CreateSessionModal';
+import { RoomView } from '../components/room/RoomView';
 import { useAppStore } from '../store/useAppStore';
+import { CANVAS_W, CANVAS_H } from '../components/room/tableLayout';
+
+const TOP_BAR_H = 38;
 
 export function LobbyPage() {
   const nickname = useAppStore((s) => s.nickname);
+  const sessions = useAppStore((s) => s.sessions);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const update = () => {
+      const sx = window.innerWidth / CANVAS_W;
+      const sy = window.innerHeight / (CANVAS_H + TOP_BAR_H);
+      setScale(Math.min(sx, sy));
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   return (
-    <Layout>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: '#000',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        fontFamily: '"Press Start 2P", monospace',
+      }}
+    >
       {!nickname && <NicknameModal />}
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800">Active Sessions</h2>
-        <div className="flex gap-2">
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          display: 'flex',
+          flexDirection: 'column',
+          width: CANVAS_W,
+        }}
+      >
+        {/* Top bar */}
+        <div
+          style={{
+            height: TOP_BAR_H,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 12px',
+            background: '#0d0d1a',
+            borderBottom: '2px solid #3d2608',
+          }}
+        >
+          <span style={{ fontSize: 7, color: '#f9c74f', letterSpacing: 1 }}>
+            🎲 {nickname ?? '…'}
+          </span>
           <Link
             to="/add-game"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            style={{
+              fontSize: 6,
+              color: '#90cdf4',
+              textDecoration: 'none',
+              border: '1px solid #4a5568',
+              padding: '4px 8px',
+              background: '#1a202c',
+            }}
           >
-            + Add Game
+            + GAME
           </Link>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            disabled={!nickname}
-            className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-          >
-            Host a Game
-          </button>
         </div>
+
+        {/* Room */}
+        <RoomView
+          sessions={sessions}
+          myNickname={nickname}
+          onHostHere={() => {
+            if (nickname) setShowCreateModal(true);
+          }}
+        />
       </div>
 
-      <SessionList />
-
-      {showCreateModal && <CreateSessionModal onClose={() => setShowCreateModal(false)} />}
-    </Layout>
+      {showCreateModal && (
+        <CreateSessionModal onClose={() => setShowCreateModal(false)} />
+      )}
+    </div>
   );
 }

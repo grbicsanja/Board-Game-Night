@@ -46,11 +46,11 @@ export function AddGamePage() {
         ← Back to lobby
       </Link>
 
-      <h2 className="mb-4 text-lg font-bold text-gray-900">Add a Game</h2>
+      <h2 className="mb-4 text-sm font-bold text-gray-900">Add a Game</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div>
-          <label htmlFor="game-name" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="game-name" className="mb-1 block text-xs font-bold text-gray-700">
             Game name <span aria-hidden="true">*</span>
           </label>
           <input
@@ -71,7 +71,7 @@ export function AddGamePage() {
         </div>
 
         <div>
-          <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="category" className="mb-1 block text-xs font-bold text-gray-700">
             Category
           </label>
           <select
@@ -87,7 +87,7 @@ export function AddGamePage() {
         </div>
 
         <div>
-          <label htmlFor="est-minutes" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="est-minutes" className="mb-1 block text-xs font-bold text-gray-700">
             Estimated play time (minutes)
           </label>
           <input
@@ -103,7 +103,7 @@ export function AddGamePage() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="min-players" className="mb-1 block text-sm font-medium text-gray-700">
+            <label htmlFor="min-players" className="mb-1 block text-xs font-bold text-gray-700">
               Min players
             </label>
             <input
@@ -116,7 +116,7 @@ export function AddGamePage() {
             />
           </div>
           <div>
-            <label htmlFor="max-players" className="mb-1 block text-sm font-medium text-gray-700">
+            <label htmlFor="max-players" className="mb-1 block text-xs font-bold text-gray-700">
               Max players
             </label>
             <input

@@ -83,6 +83,7 @@ export function toggleReaction(sessionId: string, emoji: string, socketId: strin
 }
 
 export function getSessionSummary(session: Session): SessionSummary {
+  const game = store.games.get(session.gameId);
   return {
     id: session.id,
     gameId: session.gameId,
@@ -94,5 +95,9 @@ export function getSessionSummary(session: Session): SessionSummary {
     waitlistCount: session.waitlist.length,
     reactions: { ...session.reactions },
     createdAt: session.createdAt,
+    playerNicknames: session.players.map((p) => p.nickname),
+    waitlistNicknames: session.waitlist.map((p) => p.nickname),
+    startedAt: session.startedAt,
+    maxPlayers: game?.maxPlayers ?? 8,
   };
 }

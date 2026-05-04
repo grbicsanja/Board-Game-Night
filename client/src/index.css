@@ -1,3 +1,48 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Press Start 2P', monospace;
+    line-height: 1.8;
+  }
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+}
+
+/* ── 8-bit room animations ── */
+@keyframes pixel-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-2px); }
+}
+
+@keyframes pixel-walk {
+  0%   { transform: translateY(0px) rotate(0deg); }
+  25%  { transform: translateY(-3px) rotate(-4deg); }
+  50%  { transform: translateY(0px) rotate(0deg); }
+  75%  { transform: translateY(-3px) rotate(4deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes table-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(144, 238, 144, 0.5), 2px 2px 0 #000; }
+  50%       { box-shadow: 0 0 0 5px rgba(144, 238, 144, 0), 2px 2px 0 #000; }
+}
+
+@keyframes table-pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 89, 242, 0.6), 2px 2px 0 #000; }
+  50%       { box-shadow: 0 0 0 5px rgba(45, 89, 242, 0), 2px 2px 0 #000; }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.pixel-bob        { animation: pixel-bob  0.4s steps(2) infinite; }
+.pixel-walk       { animation: pixel-walk 0.35s steps(4) infinite; }
+.pulse-green      { animation: table-pulse      2s ease-in-out infinite; }
+.pulse-blue       { animation: table-pulse-blue 1.5s ease-in-out infinite; }
+.blink-cursor     { animation: blink-cursor 1s steps(1) infinite; }

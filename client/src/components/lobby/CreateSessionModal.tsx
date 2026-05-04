@@ -38,7 +38,7 @@ export function CreateSessionModal({ onClose }: CreateSessionModalProps) {
         Host a Game
       </h2>
       <form onSubmit={handleSubmit}>
-        <label htmlFor="game-select" className="mb-1 block text-sm font-medium text-gray-700">
+        <label htmlFor="game-select" className="mb-1 block text-xs font-bold text-gray-700">
           Choose a game
         </label>
         <select

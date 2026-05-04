@@ -8,8 +8,8 @@ export function SessionList() {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
         <p className="text-2xl">🎲</p>
-        <p className="mt-2 font-medium text-gray-700">No sessions yet</p>
-        <p className="mt-1 text-sm text-gray-500">Be the first to host a game!</p>
+        <p className="mt-3 text-xs font-bold text-gray-700">No sessions yet</p>
+        <p className="mt-2 text-[9px] text-gray-500">Be the first to host a game!</p>
       </div>
     );
   }

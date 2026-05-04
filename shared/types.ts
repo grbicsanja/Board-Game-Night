@@ -52,6 +52,10 @@ export interface SessionSummary {
   waitlistCount: number;
   reactions: Record<string, number>;
   createdAt: number;
+  playerNicknames: string[];
+  waitlistNicknames: string[];
+  startedAt: number | null;
+  maxPlayers: number;
 }
 
 // Socket.io typed events
