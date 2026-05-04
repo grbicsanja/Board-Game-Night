@@ -6,11 +6,11 @@ export const CANVAS_W = ROOM_W + WALL * 2; // 680
 export const CANVAS_H = ROOM_H + WALL * 2; // 380
 
 // Five column centers (interior coordinates)
-export const COL_X = [63, 173, 316, 459, 569] as const;
+export const COL_X = [67, 169, 316, 463, 564] as const;
 
 // Row centers (interior coordinates)
-export const RECT_ROW_Y  = [55, 120] as const;   // 2 rows of rect tables
-export const ROUND_ROW_Y = [200, 268] as const;  // 2 rows of round tables
+export const RECT_ROW_Y  = [48, 122] as const;   // 2 rows of rect tables
+export const ROUND_ROW_Y = [203, 279] as const;  // 2 rows of round tables
 
 // Player spawn (entrance at bottom center)
 export const SPAWN_X = 316;

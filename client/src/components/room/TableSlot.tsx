@@ -99,9 +99,9 @@ function TableButton({
         transform: 'translate(-50%, -50%)',
         background: bg,
         border: `2px solid ${borderColor}`,
-        padding: '5px 8px',
-        minWidth: 66,
-        minHeight: 44,
+        padding: '2px 6px',
+        minWidth: 50,
+        minHeight: 28,
         cursor: 'pointer',
         zIndex: 15,
         boxShadow: `2px 2px 0 #000, 0 0 0 1px ${borderColor}33`,
@@ -109,32 +109,31 @@ function TableButton({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 3,
+        gap: 2,
       }}
     >
       {!session && (
         <>
-          <span style={{ ...label, fontSize: 14, color: '#90cdf4', lineHeight: 1 }}>+</span>
-          <span style={{ ...label, fontSize: 5, color: '#bee3f8' }}>GAME</span>
+          <span style={{ ...label, fontSize: 9, color: '#90cdf4', lineHeight: 1 }}>+</span>
+          <span style={{ ...label, fontSize: 4, color: '#bee3f8' }}>HOST</span>
         </>
       )}
 
       {session && status === 'open' && (
         <>
-          <span style={{ ...label, fontSize: 5, color: '#e2f0ff' }}>{gameName}</span>
-          <span style={{ ...label, fontSize: 5, color: '#90cdf4' }}>
-            {session.playerCount}👥
+          <span style={{ ...label, fontSize: 4, color: '#e2f0ff' }}>{gameName}</span>
+          <span style={{ ...label, fontSize: 4, color: '#90cdf4' }}>
+            {session.playerCount}👥 JOIN
           </span>
-          <span style={{ ...label, fontSize: 4, color: '#63b3ed' }}>JOIN →</span>
         </>
       )}
 
       {session && status === 'in_progress' && (
         <>
-          <span style={{ ...label, fontSize: 5, color: '#fef3c7' }}>{gameName}</span>
+          <span style={{ ...label, fontSize: 4, color: '#fef3c7' }}>{gameName}</span>
           {session.startedAt && <ElapsedTimer startedAt={session.startedAt} />}
           <span style={{ ...label, fontSize: 4, color: '#f9c74f' }}>
-            {session.playerCount}👥 WAIT
+            {session.playerCount}👥
           </span>
         </>
       )}
