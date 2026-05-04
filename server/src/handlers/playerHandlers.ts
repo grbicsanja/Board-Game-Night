@@ -55,6 +55,15 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
     socket.join(`session:${sessionId}`);
     setConnectionSession(socket.id, sessionId);
 
+    const alreadyMember =
+      session.players.some((p) => p.id === socket.id) ||
+      session.waitlist.some((p) => p.id === socket.id);
+
+    if (alreadyMember) {
+      socket.emit('session:snapshot', session);
+      return;
+    }
+
     const player = { id: socket.id, nickname: conn.nickname, joinedAt: Date.now() };
 
     if (session.status === 'open') {
