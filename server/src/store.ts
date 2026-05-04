@@ -1,7 +1,8 @@
-import { Game, Session, SessionSummary } from '@bgn/shared';
+import { Game, LobbyPlayer, Session, SessionSummary } from '@bgn/shared';
 
 interface ConnectionInfo {
   nickname: string;
+  avatarUrl?: string;
   sessionId: string | null;
 }
 
@@ -50,8 +51,34 @@ export function addGame(game: Game): void {
   store.games.set(game.id, game);
 }
 
-export function registerConnection(socketId: string, nickname: string): void {
-  store.connections.set(socketId, { nickname, sessionId: null });
+export function deleteGame(id: string): boolean {
+  return store.games.delete(id);
+}
+
+export function isGameInUse(id: string): boolean {
+  for (const session of store.sessions.values()) {
+    if (session.gameId === id) return true;
+  }
+  return false;
+}
+
+export function registerConnection(
+  socketId: string,
+  nickname: string,
+  avatarUrl?: string,
+): void {
+  store.connections.set(socketId, { nickname, avatarUrl, sessionId: null });
+}
+
+export function updateConnectionProfile(
+  socketId: string,
+  patch: { nickname?: string; avatarUrl?: string },
+): ConnectionInfo | undefined {
+  const conn = store.connections.get(socketId);
+  if (!conn) return undefined;
+  if (patch.nickname !== undefined) conn.nickname = patch.nickname;
+  if (patch.avatarUrl !== undefined) conn.avatarUrl = patch.avatarUrl || undefined;
+  return conn;
 }
 
 export function getConnection(socketId: string): ConnectionInfo | undefined {
@@ -67,6 +94,17 @@ export function removeConnection(socketId: string): ConnectionInfo | undefined {
   const conn = store.connections.get(socketId);
   store.connections.delete(socketId);
   return conn;
+}
+
+export function getLobbyPlayers(): LobbyPlayer[] {
+  const players: LobbyPlayer[] = [];
+  for (const [id, conn] of store.connections) {
+    if (conn.sessionId === null) {
+      players.push({ id, nickname: conn.nickname, avatarUrl: conn.avatarUrl });
+    }
+  }
+  players.sort((a, b) => a.nickname.localeCompare(b.nickname));
+  return players;
 }
 
 export function toggleReaction(sessionId: string, emoji: string, socketId: string): boolean {
@@ -89,6 +127,7 @@ export function getSessionSummary(session: Session): SessionSummary {
     gameId: session.gameId,
     gameName: session.gameName,
     hostNickname: session.hostNickname,
+    hostAvatarUrl: session.hostAvatarUrl,
     hostSocketId: session.hostSocketId,
     status: session.status,
     playerCount: session.players.length,

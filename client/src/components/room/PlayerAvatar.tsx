@@ -3,6 +3,7 @@ import { getAvatarColor } from './tableLayout';
 
 interface PlayerAvatarProps {
   nickname: string;
+  avatarUrl?: string;
   x: number; // canvas coordinate
   y: number;
   size?: number;
@@ -12,6 +13,7 @@ interface PlayerAvatarProps {
 
 export const PlayerAvatar = React.memo(function PlayerAvatar({
   nickname,
+  avatarUrl,
   x,
   y,
   size = 18,
@@ -20,6 +22,12 @@ export const PlayerAvatar = React.memo(function PlayerAvatar({
 }: PlayerAvatarProps) {
   const color = getAvatarColor(nickname);
   const initial = nickname.slice(0, 1).toUpperCase();
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const showImage = !!avatarUrl && !imgFailed;
+
+  React.useEffect(() => {
+    setImgFailed(false);
+  }, [avatarUrl]);
 
   return (
     <div
@@ -39,7 +47,7 @@ export const PlayerAvatar = React.memo(function PlayerAvatar({
           width: size,
           height: size,
           borderRadius: '50%',
-          background: color,
+          background: showImage ? '#000' : color,
           border: '2px solid #000',
           boxShadow: '1px 1px 0 #000',
           display: 'flex',
@@ -48,11 +56,21 @@ export const PlayerAvatar = React.memo(function PlayerAvatar({
           fontSize: size * 0.4,
           fontFamily: '"Press Start 2P", monospace',
           color: '#fff',
+          overflow: 'hidden',
           imageRendering: 'pixelated',
         }}
         title={nickname}
       >
-        {initial}
+        {showImage ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            onError={() => setImgFailed(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          initial
+        )}
       </div>
       {showLabel && (
         <div

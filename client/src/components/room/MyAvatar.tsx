@@ -3,13 +3,14 @@ import { getAvatarColor, WALL } from './tableLayout';
 
 interface MyAvatarProps {
   nickname: string;
+  avatarUrl?: string | null;
   targetX: number; // interior coordinates
   targetY: number;
 }
 
 const SIZE = 22;
 
-export function MyAvatar({ nickname, targetX, targetY }: MyAvatarProps) {
+export function MyAvatar({ nickname, avatarUrl, targetX, targetY }: MyAvatarProps) {
   // Track canvas position (interior + wall offset)
   const [pos, setPos] = useState({ x: targetX + WALL, y: targetY + WALL });
   const [isWalking, setIsWalking] = useState(false);
@@ -27,6 +28,12 @@ export function MyAvatar({ nickname, targetX, targetY }: MyAvatarProps) {
 
   const color = getAvatarColor(nickname);
   const initial = nickname.slice(0, 1).toUpperCase();
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = !!avatarUrl && !imgFailed;
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [avatarUrl]);
 
   return (
     <div
@@ -58,7 +65,7 @@ export function MyAvatar({ nickname, targetX, targetY }: MyAvatarProps) {
           width: SIZE,
           height: SIZE,
           borderRadius: '50%',
-          background: color,
+          background: showImage ? '#000' : color,
           border: '2px solid #fff',
           boxShadow: '2px 2px 0 #000',
           display: 'flex',
@@ -67,10 +74,20 @@ export function MyAvatar({ nickname, targetX, targetY }: MyAvatarProps) {
           fontSize: SIZE * 0.4,
           fontFamily: '"Press Start 2P", monospace',
           color: '#fff',
+          overflow: 'hidden',
           imageRendering: 'pixelated',
         }}
       >
-        {initial}
+        {showImage ? (
+          <img
+            src={avatarUrl ?? undefined}
+            alt=""
+            onError={() => setImgFailed(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          initial
+        )}
       </div>
       {/* YOU label */}
       <div

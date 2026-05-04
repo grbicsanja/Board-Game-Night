@@ -1,17 +1,30 @@
 import { useMemo } from 'react';
-import { SessionSummary } from '@bgn/shared';
+import { LobbyPlayer, SessionSummary } from '@bgn/shared';
 import { CANVAS_W, CANVAS_H, TABLE_DEFS, SPAWN_X, SPAWN_Y, WALL } from './tableLayout';
 import { RoomDecorations } from './RoomDecorations';
 import { TableSlot } from './TableSlot';
 import { MyAvatar } from './MyAvatar';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface RoomViewProps {
   sessions: SessionSummary[];
+  lobbyPlayers: LobbyPlayer[];
+  mySocketId: string | null;
   myNickname: string | null;
+  myAvatarUrl?: string | null;
   onHostHere: () => void;
 }
 
-export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
+const LOBBY_AVATAR_SPACING = 28;
+
+export function RoomView({
+  sessions,
+  lobbyPlayers,
+  mySocketId,
+  myNickname,
+  myAvatarUrl,
+  onHostHere,
+}: RoomViewProps) {
   // Map sessions to table slots by creation order (up to 20)
   const sortedSessions = useMemo(
     () => [...sessions].sort((a, b) => a.createdAt - b.createdAt).slice(0, 20),
@@ -32,6 +45,30 @@ export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
     );
     return idx === -1 ? null : idx;
   }, [sortedSessions, myNickname]);
+
+  const myInLobby = myTableIndex === null && !!myNickname;
+
+  // Lay out other lobby players in a row at the bottom. When the current
+  // user is also in the lobby, MyAvatar sits at SPAWN_X — fan others out
+  // alternately to its right and left so it stays visually centered.
+  const lobbyAvatarPositions = useMemo(() => {
+    const others = lobbyPlayers.filter((p) => p.id !== mySocketId);
+    if (others.length === 0) return [] as { player: LobbyPlayer; x: number }[];
+
+    if (myInLobby) {
+      return others.map((player, i) => {
+        const slot = Math.floor(i / 2) + 1;
+        const sign = i % 2 === 0 ? 1 : -1;
+        return { player, x: SPAWN_X + sign * slot * LOBBY_AVATAR_SPACING };
+      });
+    }
+
+    const startX = SPAWN_X - ((others.length - 1) * LOBBY_AVATAR_SPACING) / 2;
+    return others.map((player, i) => ({
+      player,
+      x: startX + i * LOBBY_AVATAR_SPACING,
+    }));
+  }, [lobbyPlayers, mySocketId, myInLobby]);
 
   const myTargetPos = useMemo(() => {
     if (myTableIndex === null) return { x: SPAWN_X, y: SPAWN_Y };
@@ -76,16 +113,28 @@ export function RoomView({ sessions, myNickname, onHostHere }: RoomViewProps) {
         />
       ))}
 
+      {lobbyAvatarPositions.map(({ player, x }) => (
+        <PlayerAvatar
+          key={player.id}
+          nickname={player.nickname}
+          avatarUrl={player.avatarUrl}
+          x={x + WALL}
+          y={SPAWN_Y + WALL}
+          showLabel
+        />
+      ))}
+
       {myNickname && (
         <MyAvatar
           nickname={myNickname}
+          avatarUrl={myAvatarUrl}
           targetX={myTargetPos.x}
           targetY={myTargetPos.y}
         />
       )}
 
       {/* Spawn area indicator when no sessions */}
-      {sessions.length === 0 && (
+      {sessions.length === 0 && lobbyPlayers.length <= 1 && (
         <div style={{
           position: 'absolute',
           left: WALL + 40,

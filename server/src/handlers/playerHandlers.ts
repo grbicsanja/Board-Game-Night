@@ -10,12 +10,14 @@ import {
   getAllGames,
   getAllSessions,
   getConnection,
+  getLobbyPlayers,
   getSession,
   getSessionSummary,
   registerConnection,
   removeConnection,
   setConnectionSession,
   setSession,
+  updateConnectionProfile,
 } from '../store';
 
 type TypedSocket = Socket<
@@ -32,10 +34,56 @@ type TypedServer = Server<
 >;
 
 export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): void {
-  socket.on('player:register', ({ nickname }) => {
+  socket.on('player:register', ({ nickname, avatarUrl }) => {
     if (!nickname || nickname.trim().length === 0) return;
-    registerConnection(socket.id, nickname.trim().slice(0, 20));
+    registerConnection(socket.id, nickname.trim().slice(0, 20), sanitizeAvatarUrl(avatarUrl));
     socket.join('lobby');
+    io.to('lobby').emit('lobby:players_updated', { players: getLobbyPlayers() });
+  });
+
+  socket.on('player:update', ({ nickname, avatarUrl }) => {
+    const conn = getConnection(socket.id);
+    if (!conn) return;
+
+    const nextNickname =
+      nickname !== undefined && nickname.trim().length > 0
+        ? nickname.trim().slice(0, 20)
+        : undefined;
+    const nextAvatarUrl = avatarUrl !== undefined ? sanitizeAvatarUrl(avatarUrl) ?? '' : undefined;
+
+    updateConnectionProfile(socket.id, {
+      nickname: nextNickname,
+      avatarUrl: nextAvatarUrl,
+    });
+
+    if (!conn.sessionId) return;
+    const session = getSession(conn.sessionId);
+    if (!session) return;
+
+    const apply = <T extends { id: string; nickname: string; avatarUrl?: string }>(p: T): T => {
+      if (p.id !== socket.id) return p;
+      return {
+        ...p,
+        nickname: nextNickname ?? p.nickname,
+        avatarUrl: nextAvatarUrl !== undefined ? nextAvatarUrl || undefined : p.avatarUrl,
+      };
+    };
+    session.players = session.players.map(apply);
+    session.waitlist = session.waitlist.map(apply);
+    if (session.hostSocketId === socket.id) {
+      if (nextNickname) session.hostNickname = nextNickname;
+      if (nextAvatarUrl !== undefined) session.hostAvatarUrl = nextAvatarUrl || undefined;
+    }
+    setSession(session);
+
+    const updated =
+      session.players.find((p) => p.id === socket.id) ??
+      session.waitlist.find((p) => p.id === socket.id);
+    if (updated) {
+      io.to(`session:${session.id}`).emit('session:player_updated', { player: updated });
+    }
+    io.to('lobby').emit('lobby:session_updated', getSessionSummary(session));
+    io.to('lobby').emit('lobby:players_updated', { players: getLobbyPlayers() });
   });
 
   socket.on('session:join', ({ sessionId }) => {
@@ -69,7 +117,12 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
       return;
     }
 
-    const player = { id: socket.id, nickname: conn.nickname, joinedAt: Date.now() };
+    const player: { id: string; nickname: string; avatarUrl?: string; joinedAt: number } = {
+      id: socket.id,
+      nickname: conn.nickname,
+      avatarUrl: conn.avatarUrl,
+      joinedAt: Date.now(),
+    };
 
     if (session.status === 'open') {
       session.players.push(player);
@@ -84,6 +137,7 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
     }
 
     io.to('lobby').emit('lobby:session_updated', getSessionSummary(session));
+    io.to('lobby').emit('lobby:players_updated', { players: getLobbyPlayers() });
   });
 
   socket.on('session:leave', ({ sessionId }) => {
@@ -107,7 +161,9 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
     socket.emit('lobby:snapshot', {
       sessions: getAllSessions().map(getSessionSummary),
       games: getAllGames(),
+      lobbyPlayers: getLobbyPlayers(),
     });
+    io.to('lobby').emit('lobby:players_updated', { players: getLobbyPlayers() });
   });
 
   socket.on('disconnect', () => {
@@ -115,8 +171,19 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
     if (!conn) return;
     if (conn.sessionId) {
       leaveSession(socket, io, conn.sessionId, conn.nickname, true);
+    } else {
+      io.to('lobby').emit('lobby:players_updated', { players: getLobbyPlayers() });
     }
   });
+}
+
+function sanitizeAvatarUrl(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.length > 500) return undefined;
+  if (!/^https?:\/\//i.test(trimmed)) return undefined;
+  return trimmed;
 }
 
 function leaveSession(

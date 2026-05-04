@@ -5,29 +5,40 @@ import { useNickname } from './useNickname';
 
 export function useSocket() {
   const store = useAppStore();
-  const { getNickname } = useNickname();
+  const { getNickname, getAvatarUrl } = useNickname();
 
   useEffect(() => {
     const nickname = getNickname();
+    const avatarUrl = getAvatarUrl();
 
     socket.on('connect', () => {
       store.setConnected(true);
+      store.setSocketId(socket.id ?? null);
+      if (avatarUrl) store.setAvatarUrl(avatarUrl);
       if (nickname) {
         store.setNickname(nickname);
-        socket.emit('player:register', { nickname });
+        socket.emit('player:register', {
+          nickname,
+          avatarUrl: avatarUrl ?? undefined,
+        });
       }
     });
 
-    socket.on('disconnect', () => store.setConnected(false));
+    socket.on('disconnect', () => {
+      store.setConnected(false);
+      store.setSocketId(null);
+    });
 
-    socket.on('lobby:snapshot', ({ sessions, games }) => {
-      store.setLobbySnapshot(sessions, games);
+    socket.on('lobby:snapshot', ({ sessions, games, lobbyPlayers }) => {
+      store.setLobbySnapshot(sessions, games, lobbyPlayers);
     });
 
     socket.on('lobby:session_added', (session) => store.upsertSessionSummary(session));
     socket.on('lobby:session_updated', (session) => store.upsertSessionSummary(session));
     socket.on('lobby:session_removed', ({ sessionId }) => store.removeSessionSummary(sessionId));
     socket.on('lobby:game_added', (game) => store.addGame(game));
+    socket.on('lobby:game_removed', ({ gameId }) => store.removeGame(gameId));
+    socket.on('lobby:players_updated', ({ players }) => store.setLobbyPlayers(players));
 
     socket.on('session:snapshot', (session) => store.setCurrentSession(session));
 
@@ -41,6 +52,10 @@ export function useSocket() {
 
     socket.on('session:player_left', ({ playerId }) => {
       store.removePlayerFromSession(playerId);
+    });
+
+    socket.on('session:player_updated', ({ player }) => {
+      store.updatePlayerInSession(player);
     });
 
     socket.on('session:status_changed', ({ status }) => {
@@ -65,10 +80,13 @@ export function useSocket() {
       socket.off('lobby:session_updated');
       socket.off('lobby:session_removed');
       socket.off('lobby:game_added');
+      socket.off('lobby:game_removed');
+      socket.off('lobby:players_updated');
       socket.off('session:snapshot');
       socket.off('session:player_joined');
       socket.off('session:player_waitlisted');
       socket.off('session:player_left');
+      socket.off('session:player_updated');
       socket.off('session:status_changed');
       socket.off('chat:message');
       socket.off('reaction:updated');
