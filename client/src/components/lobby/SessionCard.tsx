@@ -3,6 +3,7 @@ import { SessionSummary } from '@bgn/shared';
 import { Badge } from '../shared/Badge';
 import { ReactionBar } from './ReactionBar';
 import { useAppStore } from '../../store/useAppStore';
+import { socket } from '../../socket';
 
 interface SessionCardProps {
   session: SessionSummary;
@@ -13,7 +14,12 @@ export function SessionCard({ session }: SessionCardProps) {
   const games = useAppStore((s) => s.games);
   const game = games.find((g) => g.id === session.gameId);
 
-  const actionLabel = session.status === 'open' ? 'Join' : 'Join waitlist';
+  const isMyHostedSession = session.hostSocketId === socket.id;
+  const actionLabel = isMyHostedSession
+    ? 'Resume your session'
+    : session.status === 'open'
+      ? 'Join'
+      : 'Join waitlist';
   const ariaLabel = `${session.gameName}, hosted by ${session.hostNickname}, ${session.playerCount} player${session.playerCount !== 1 ? 's' : ''}, status: ${session.status === 'in_progress' ? 'in progress' : session.status}. ${actionLabel}.`;
 
   return (
@@ -26,7 +32,9 @@ export function SessionCard({ session }: SessionCardProps) {
         <div className="mb-2 flex items-start justify-between gap-2">
           <div>
             <p className="font-semibold text-gray-900">{session.gameName}</p>
-            <p className="text-sm text-gray-500">hosted by {session.hostNickname}</p>
+            <p className="text-sm text-gray-500">
+              {isMyHostedSession ? 'hosted by you' : `hosted by ${session.hostNickname}`}
+            </p>
           </div>
           <Badge status={session.status} />
         </div>

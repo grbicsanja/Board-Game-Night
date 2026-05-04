@@ -7,6 +7,8 @@ import {
 } from '@bgn/shared';
 import {
   deleteSession,
+  getAllGames,
+  getAllSessions,
   getConnection,
   getSession,
   getSessionSummary,
@@ -55,6 +57,9 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
     socket.join(`session:${sessionId}`);
     setConnectionSession(socket.id, sessionId);
 
+    // Idempotent rejoin: skip re-adding a socket that's already a member
+    // (host's session:create → session:join, or a host returning from a
+    // "minimize"). Send the snapshot so the client populates state.
     const alreadyMember =
       session.players.some((p) => p.id === socket.id) ||
       session.waitlist.some((p) => p.id === socket.id);
@@ -84,16 +89,32 @@ export function registerPlayerHandlers(socket: TypedSocket, io: TypedServer): vo
   socket.on('session:leave', ({ sessionId }) => {
     const conn = getConnection(socket.id);
     if (!conn) return;
+
+    const session = getSession(sessionId);
+    const isHost = !!session && session.hostSocketId === socket.id;
+
     leaveSession(socket, io, sessionId, conn.nickname);
-    setConnectionSession(socket.id, null);
+
+    // For the host, "leave" means "minimize back to the lobby" — keep the
+    // connection bound to the session so a real disconnect still ends it,
+    // and so the host can resume from the lobby.
+    if (!isHost) {
+      setConnectionSession(socket.id, null);
+    }
     socket.join('lobby');
+    // Refresh the lobby view: while in the session this socket missed any
+    // lobby:* broadcasts (including session_added for its own session).
+    socket.emit('lobby:snapshot', {
+      sessions: getAllSessions().map(getSessionSummary),
+      games: getAllGames(),
+    });
   });
 
   socket.on('disconnect', () => {
     const conn = removeConnection(socket.id);
     if (!conn) return;
     if (conn.sessionId) {
-      leaveSession(socket, io, conn.sessionId, conn.nickname);
+      leaveSession(socket, io, conn.sessionId, conn.nickname, true);
     }
   });
 }
@@ -102,7 +123,8 @@ function leaveSession(
   socket: TypedSocket,
   io: TypedServer,
   sessionId: string,
-  nickname: string
+  nickname: string,
+  isDisconnect = false
 ): void {
   const session = getSession(sessionId);
   if (!session) return;
@@ -111,6 +133,12 @@ function leaveSession(
 
   const wasHost = session.hostSocketId === socket.id;
 
+  // Host navigating back to the lobby keeps the session alive so they can
+  // resume. Only an actual disconnect tears it down.
+  if (wasHost && !isDisconnect) {
+    return;
+  }
+
   session.players = session.players.filter((p) => p.id !== socket.id);
   session.waitlist = session.waitlist.filter((p) => p.id !== socket.id);
   setSession(session);
@@ -118,7 +146,6 @@ function leaveSession(
   io.to(`session:${sessionId}`).emit('session:player_left', { playerId: socket.id });
 
   if (wasHost) {
-    // Cancel session when host disconnects
     io.to(`session:${sessionId}`).emit('session:ended', { sessionId });
     io.to('lobby').emit('lobby:session_removed', { sessionId });
     deleteSession(sessionId);

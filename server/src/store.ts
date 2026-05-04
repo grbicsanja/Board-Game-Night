@@ -88,6 +88,7 @@ export function getSessionSummary(session: Session): SessionSummary {
     gameId: session.gameId,
     gameName: session.gameName,
     hostNickname: session.hostNickname,
+    hostSocketId: session.hostSocketId,
     status: session.status,
     playerCount: session.players.length,
     waitlistCount: session.waitlist.length,

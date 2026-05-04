@@ -46,6 +46,7 @@ export interface SessionSummary {
   gameId: string;
   gameName: string;
   hostNickname: string;
+  hostSocketId: string;
   status: SessionStatus;
   playerCount: number;
   waitlistCount: number;
